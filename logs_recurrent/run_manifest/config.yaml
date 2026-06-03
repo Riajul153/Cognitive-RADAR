@@ -1,0 +1,77 @@
+antenna:
+  element_spacing: 0.5
+  frequency_hz: 10.0e9
+  n_cols: 8
+  n_rows: 8
+dashboard:
+  stream_freq: 10
+  update_rate_hz: 30
+  websocket_host: localhost
+  websocket_port: 8765
+environment:
+  action_mode: parametric
+  azimuth_max_deg: 60.0
+  dt: 0.01
+  elevation_max_deg: 60.0
+  episode_length: 500
+  max_angular_step_deg: 2.0
+  parametric_type: incremental
+  reward:
+    error_penalty: 0.45
+    gain_shaping_power: 0.75
+    gain_weight: 1.0
+    improvement_bonus: 0.05
+    lock_bonus: 0.55
+    lock_streak_bonus: 0.25
+    low_gain_penalty: 0.35
+    reward_clip_max: 2.5
+    reward_clip_min: -1.5
+    smoothness_penalty: 0.03
+    smoothness_relief_when_locked: 0.75
+    streak_cap_steps: 50
+  success:
+    enable_track_loss_termination: false
+    max_error_deg: 5.0
+    min_gain: 0.85
+    min_locked_fraction: 0.8
+    track_loss_error_deg: 20.0
+    track_loss_steps: 100
+target:
+  acceleration_std: 30.0
+  altitude_max: 10000.0
+  altitude_min: 1000.0
+  azimuth_range_deg: 120.0
+  correlation_time: 2.0
+  elevation_range_deg: 60.0
+  initial_range_max: 15000.0
+  initial_range_min: 5000.0
+  max_acceleration: 50.0
+  max_speed: 300.0
+training:
+  algorithm: RecurrentPPO
+  batch_size: 512
+  buffer_size: 500000
+  checkpoint_freq: 50000
+  csv_flush_freq: 1000
+  device: cuda
+  ent_coef: 0.0
+  env_seed: 42
+  eval_freq: 20000
+  gamma: 0.99
+  gradient_steps: 2
+  learning_rate: 0.00073
+  log_dir: logs_recurrent/
+  log_freq: 50
+  model_dir: models_recurrent/
+  n_envs: 10
+  n_epochs: 10
+  n_eval_episodes: 10
+  n_steps: 512
+  net_arch:
+  - 256
+  - 256
+  save_best_by_gain: true
+  tau: 0.005
+  total_timesteps: 3000000
+  train_freq: 1
+  vec_env_type: subproc

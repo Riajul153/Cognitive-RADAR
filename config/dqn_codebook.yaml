@@ -1,0 +1,89 @@
+# ============================================================
+# DRL Adaptive Beamforming — Discrete Codebook DQN Baseline
+# ============================================================
+
+antenna:
+  n_rows: 8
+  n_cols: 8
+  frequency_hz: 10.0e9        # X-band radar
+  element_spacing: 0.5         # in wavelengths (λ/2)
+
+target:
+  max_speed: 300.0             # m/s (~Mach 0.88)
+  max_acceleration: 50.0       # m/s² (~5G maneuver)
+  acceleration_std: 30.0       # m/s² — Singer model σ_a
+  correlation_time: 2.0        # seconds — Singer model τ
+  initial_range_min: 5000.0    # meters
+  initial_range_max: 15000.0   # meters
+  altitude_min: 1000.0         # meters
+  altitude_max: 10000.0        # meters
+  azimuth_range_deg: 120.0     # ±60° from boresight
+  elevation_range_deg: 60.0    # ±30° from boresight
+
+environment:
+  dt: 0.01                     # 10ms time step (100 Hz)
+  episode_length: 500          # steps per episode (5 seconds)
+  action_mode: "codebook"      # DISCRETE CODEBOOK MODE
+  elevation_max_deg: 60.0
+  azimuth_max_deg: 60.0
+  reward:
+    gain_weight: 1.0
+    error_penalty: 0.45
+    lock_bonus: 0.55
+    lock_streak_bonus: 0.25
+    low_gain_penalty: 0.35
+    improvement_bonus: 0.05
+    smoothness_penalty: 0.03
+    gain_shaping_power: 0.75
+    streak_cap_steps: 50
+    smoothness_relief_when_locked: 0.75
+    reward_clip_min: -1.5
+    reward_clip_max: 2.5
+  success:
+    min_gain: 0.85
+    max_error_deg: 5.0
+    min_locked_fraction: 0.8
+    enable_track_loss_termination: false
+    track_loss_error_deg: 20.0
+    track_loss_steps: 100
+
+training:
+  algorithm: "DQN"
+  device: "cuda"
+
+  # ── Parallelism ───────────────────────────────────────────
+  n_envs: 20
+  vec_env_type: "subproc"
+  env_seed: 42
+
+  # ── Training budget ──────────────────────────────────────
+  total_timesteps: 3000000     # Full 3M steps for a fair comparison with SAC
+
+  # ── DQN hyperparameters ──────────────────────────────────
+  learning_rate: 0.0001
+  batch_size: 256
+  buffer_size: 200000
+  gamma: 0.99
+  exploration_fraction: 0.1
+  exploration_initial_eps: 1.0
+  exploration_final_eps: 0.05
+  train_freq: 4                 # Update every 4 steps
+  gradient_steps: 1
+  target_update_interval: 1000
+  net_arch: [256, 256]          # 2-layer MLP
+
+  # ── Evaluation ───────────────────────────────────────────
+  eval_freq: 20000
+  n_eval_episodes: 10
+  checkpoint_freq: 100000
+  log_freq: 50
+  csv_flush_freq: 1000
+  save_best_by_gain: true
+  log_dir: "logs/dqn/"
+  model_dir: "models/dqn/"
+
+dashboard:
+  websocket_host: "localhost"
+  websocket_port: 8765
+  stream_freq: 10
+  update_rate_hz: 30

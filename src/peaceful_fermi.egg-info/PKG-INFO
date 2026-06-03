@@ -1,0 +1,19 @@
+Metadata-Version: 2.4
+Name: peaceful-fermi
+Version: 0.1.0
+Summary: DRL-Based Adaptive Beamforming for Phased Array Radar Target Tracking
+Author: Antigravity
+Requires-Dist: numpy>=1.24
+Requires-Dist: scipy>=1.10
+Requires-Dist: gymnasium>=0.29
+Requires-Dist: stable-baselines3>=2.1
+Requires-Dist: torch>=2.0
+Requires-Dist: tensorboard>=2.14
+Requires-Dist: matplotlib>=3.7
+Requires-Dist: plotly>=5.15
+Requires-Dist: pyyaml>=6.0
+Requires-Dist: websockets>=12.0
+Requires-Dist: websocket-client>=1.6.0
+Dynamic: author
+Dynamic: requires-dist
+Dynamic: summary

@@ -1,0 +1,13 @@
+{
+  "episode_termination": {
+    "terminated_on_track_loss": false,
+    "truncated_on_time_limit": true,
+    "episode_length_steps": 500
+  },
+  "success_criteria_for_metrics": {
+    "tracking_locked_per_step": "gain >= 0.85 AND error_deg <= 5.0",
+    "episode_success": "locked_step_fraction >= 0.8 over full episode",
+    "note": "By default episodes do NOT end early on track loss; they run 5s then truncate."
+  },
+  "device": "cuda"
+}

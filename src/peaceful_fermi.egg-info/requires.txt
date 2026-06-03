@@ -1,0 +1,11 @@
+numpy>=1.24
+scipy>=1.10
+gymnasium>=0.29
+stable-baselines3>=2.1
+torch>=2.0
+tensorboard>=2.14
+matplotlib>=3.7
+plotly>=5.15
+pyyaml>=6.0
+websockets>=12.0
+websocket-client>=1.6.0

@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DRL Adaptive Beamforming Radar Dashboard</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- Plotly.js CDN -->
+    <script src="https://cdn.plot.ly/plotly-2.24.1.min.js"></script>
+    <link rel="stylesheet" href="index.css">
+</head>
+<body>
+    <div class="glow-overlay"></div>
+    <div class="container">
+        <!-- Header -->
+        <header class="glass-panel main-header">
+            <div class="title-section">
+                <div class="radar-ping"></div>
+                <h1>DRL ADAPTIVE BEAMFORMER</h1>
+                <span class="tagline">Phased Array Radar Target Locking</span>
+            </div>
+            
+            <div class="status-indicators">
+                <div class="indicator-group">
+                    <span class="label">CONNECTION:</span>
+                    <div class="status-badge disconnected" id="connection-status">
+                        <span class="badge-dot"></span>
+                        <span class="badge-text">DISCONNECTED</span>
+                    </div>
+                </div>
+                <div class="indicator-group">
+                    <span class="label">ALGORITHM:</span>
+                    <div class="status-badge" id="algo-badge">SAC</div>
+                </div>
+                <div class="indicator-group">
+                    <span class="label">EPISODE:</span>
+                    <div class="metric-value" id="episode-num">0</div>
+                </div>
+                <div class="indicator-group">
+                    <span class="label">STEP:</span>
+                    <div class="metric-value" id="step-num">0</div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Workspace Grid -->
+        <main class="dashboard-grid">
+            
+            <!-- Panel 1: 3D Beam Pattern -->
+            <section class="glass-panel card beam-pattern-card">
+                <div class="card-header">
+                    <h2>3D Antenna Radiation Pattern</h2>
+                    <span class="subtitle">Normalized Array Factor Power Gain</span>
+                </div>
+                <div class="card-content" id="beam-pattern-chart"></div>
+            </section>
+
+            <!-- Panel 2: Target Trajectory Tracker -->
+            <section class="glass-panel card target-tracker-card">
+                <div class="card-header">
+                    <h2>3D Space Target Tracking</h2>
+                    <span class="subtitle">Radar at origin · Cyan dot = aircraft · Green dashed = where the beam points</span>
+                </div>
+                <div class="card-content-wrap">
+                    <div class="card-content" id="target-tracker-chart"></div>
+                    <div class="tracker-hud">
+                        <div class="tracker-legend" aria-label="Chart legend">
+                            <span class="leg leg-radar"><span class="swatch"></span> Radar (0, 0, 0)</span>
+                            <span class="leg leg-target"><span class="swatch"></span> Target (cyan)</span>
+                            <span class="leg leg-trail"><span class="swatch"></span> Flight path (blue)</span>
+                            <span class="leg leg-beam"><span class="swatch"></span> Beam direction (green)</span>
+                        </div>
+                        <div class="tracker-telemetry" id="target-telemetry">
+                            Range: — km · Altitude: — m · Bearing: —°
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Panel 3: Antenna Phases -->
+            <section class="glass-panel card phases-card">
+                <div class="card-header">
+                    <h2>Phased Array Element Phases</h2>
+                    <span class="subtitle">8×8 Uniform Planar Array Phase Shifters (rad)</span>
+                </div>
+                <div class="card-content" id="phases-heatmap"></div>
+            </section>
+
+            <!-- Panel 4: Performance Curves -->
+            <section class="glass-panel card performance-card">
+                <div class="card-header">
+                    <h2>Live Performance Metrics</h2>
+                    <span class="subtitle">Dense Reward, Tracking Error & Target Gain</span>
+                </div>
+                <div class="card-content" id="performance-chart"></div>
+            </section>
+
+        </main>
+
+        <!-- Footer Control Bar -->
+        <footer class="glass-panel control-bar">
+            <div class="controls-group controls-primary">
+                <div class="control-block">
+                    <span class="control-block-title">Simulation source</span>
+                    <button type="button" class="btn btn-demo-toggle btn-demo-on" id="btn-demo" aria-pressed="true">
+                        <span class="btn-demo-icon" aria-hidden="true">◎</span>
+                        <span class="btn-demo-label">DEMO RUNNING</span>
+                        <span class="btn-demo-hint">Click to wait for live Python stream</span>
+                    </button>
+                </div>
+
+                <div class="control-block control-block-policy">
+                    <span class="control-block-title">Demo policy (how the beam behaves)</span>
+                    <div class="policy-btn-group" id="policy-btn-group" role="group" aria-label="Simulation policy">
+                        <button type="button" class="btn-policy active" data-policy="oracle" id="btn-policy-oracle">
+                            Oracle track
+                        </button>
+                        <button type="button" class="btn-policy" data-policy="random" id="btn-policy-random">
+                            Random beam
+                        </button>
+                        <button type="button" class="btn-policy" data-policy="fixed" id="btn-policy-fixed">
+                            Fixed boresight
+                        </button>
+                    </div>
+                    <p class="control-hint" id="policy-hint">
+                        Live runs: use <code>python scripts/visualize_env.py --policy oracle</code>
+                    </p>
+                </div>
+
+                <div class="control-block">
+                    <span class="control-block-title">Animation speed</span>
+                    <div class="speed-slider-container">
+                        <input type="range" min="1" max="100" value="50" class="slider slider-large" id="speed-slider">
+                        <span class="slider-value" id="speed-val">50%</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="summary-stats">
+                <div class="stat">
+                    <span class="stat-lbl">CURRENT GAIN:</span>
+                    <span class="stat-val text-success" id="stat-gain">0.000</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-lbl">TRACKING ERROR:</span>
+                    <span class="stat-val text-danger" id="stat-error">0.00°</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-lbl">EPISODE REWARD:</span>
+                    <span class="stat-val text-cyan" id="stat-reward">0.000</span>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Script loading -->
+    <script src="app.js"></script>
+</body>
+</html>

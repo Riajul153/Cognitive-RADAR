@@ -1,0 +1,96 @@
+# ============================================================
+# DRL Adaptive Beamforming — Optimized for V100 + 24-core server
+# ============================================================
+# Tuned for fast, stable convergence with the 2D parametric
+# action space on Tesla V100-PCIE-32GB + 24 physical cores.
+
+antenna:
+  n_rows: 16
+  n_cols: 16
+  frequency_hz: 10.0e9        # X-band radar
+  element_spacing: 0.5         # in wavelengths (λ/2)
+
+target:
+  max_speed: 300.0             # m/s (~Mach 0.88)
+  max_acceleration: 50.0       # m/s² (~5G maneuver)
+  acceleration_std: 30.0       # m/s² — Singer model σ_a
+  correlation_time: 2.0        # seconds — Singer model τ
+  initial_range_min: 5000.0    # meters
+  initial_range_max: 15000.0   # meters
+  altitude_min: 1000.0         # meters
+  altitude_max: 10000.0        # meters
+  azimuth_range_deg: 120.0     # ±60° from boresight
+  elevation_range_deg: 60.0    # ±30° from boresight
+
+environment:
+  dt: 0.01                     # 10ms time step (100 Hz)
+  episode_length: 500          # steps per episode (5 seconds)
+  action_mode: "parametric"    # physics-informed 2D action space
+  parametric_type: "incremental"
+  max_angular_step_deg: 2.0    # max slew rate per step
+  elevation_max_deg: 60.0
+  azimuth_max_deg: 60.0
+  reward:
+    gain_weight: 1.0
+    error_penalty: 0.45
+    lock_bonus: 0.55
+    lock_streak_bonus: 0.25
+    low_gain_penalty: 0.35
+    improvement_bonus: 0.05
+    smoothness_penalty: 0.03
+    gain_shaping_power: 0.75
+    streak_cap_steps: 50
+    smoothness_relief_when_locked: 0.75
+    reward_clip_min: -1.5
+    reward_clip_max: 2.5
+  success:
+    min_gain: 0.85
+    max_error_deg: 5.0
+    min_locked_fraction: 0.8
+    enable_track_loss_termination: false
+    track_loss_error_deg: 20.0
+    track_loss_steps: 100
+
+training:
+  algorithm: "SAC"
+  device: "cuda"
+
+  # ── Parallelism ───────────────────────────────────────────
+  # 20 parallel envs on 24 physical cores (leaves headroom
+  # for the main process + GPU data transfer threads).
+  n_envs: 10
+  frame_stack: 4
+  vec_env_type: "subproc"
+  env_seed: 42
+
+  # ── Training budget ──────────────────────────────────────
+  # 3M steps for full convergence and polish under aggressive maneuvers.
+  # Checkpoints saved every 50k steps for fine-grained recovery.
+  total_timesteps: 3000000
+
+  # ── SAC hyperparameters (tuned for 2D continuous) ────────
+  learning_rate: 7.3e-4         # higher LR safe with 2D actions
+  batch_size: 512               # V100 handles large batches well
+  buffer_size: 500000           # 500k transitions (1M is overkill for 2D)
+  gamma: 0.99                   # standard discount
+  tau: 0.005                    # soft target update
+  train_freq: 1                 # update every step
+  gradient_steps: 2             # 2 gradient steps per env step — use the GPU
+  ent_coef: "auto"              # auto-tuned entropy for exploration
+  net_arch: [256, 256]          # 2-layer MLP (2D input doesn't need 3 layers)
+
+  # ── Evaluation ───────────────────────────────────────────
+  eval_freq: 20000              # evaluate every 20k steps (~40 episodes)
+  n_eval_episodes: 10           # 10 episodes per eval (fast)
+  checkpoint_freq: 50000       # checkpoint every 50k steps
+  log_freq: 50                  # log tracking metrics every 50 steps
+  csv_flush_freq: 1000
+  save_best_by_gain: true
+  log_dir: "logs_256_element/"
+  model_dir: "models_256_element/"
+
+dashboard:
+  websocket_host: "localhost"
+  websocket_port: 8765
+  stream_freq: 10               # stream every 10th step (reduce overhead)
+  update_rate_hz: 30
